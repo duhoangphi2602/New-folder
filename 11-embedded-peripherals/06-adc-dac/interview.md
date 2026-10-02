@@ -1,0 +1,11 @@
+# Interview Questions: ADC and DAC
+
+## 1. What is the Nyquist Theorem, and why is it critical when using an ADC to sample an analog signal?
+**Answer:** The Nyquist Theorem states that to accurately digitize and reconstruct an analog wave, the ADC's Sampling Rate must be at least twice the frequency of the highest frequency component present in the analog signal. For example, human hearing goes up to roughly 20 kHz. To record human audio without losing data or creating severe distortion (called "Aliasing"), the ADC must sample the microphone at a minimum of 40 kHz (which is why CDs are standardized at 44.1 kHz). If you sample slower than the Nyquist rate, high-frequency waves will masquerade as low-frequency waves, permanently destroying the data integrity.
+
+## 2. You configure an ADC and read a potentiometer. The physical voltage is perfectly stable at 1.5V, but your C++ raw ADC readings are fluctuating rapidly between `1850`, `1890`, and `1820`. What is happening, and how can you fix it in software?
+**Answer:** The ADC is picking up high-frequency electromagnetic noise, or the power supply (VREF) itself is noisy. Because a 12-bit ADC has a tiny step size (0.8 millivolts), even microscopic voltage ripples caused by nearby digital switching or WiFi signals will cause the raw integer to jump around. 
+In software, you fix this using a **Moving Average Filter** (or a Low-Pass Filter). Instead of taking one sample and trusting it, you command the ADC to take 10 or 16 samples rapidly in a row, sum them up, and divide by the number of samples. This smooths out the random noise spikes and provides a highly stable, accurate integer.
+
+## 3. Why is DMA almost always used when outputting audio via a DAC?
+**Answer:** Audio requires strict, continuous, and high-speed data flow (e.g., 44,100 DAC updates per second). If you try to use CPU Polling or Interrupts to feed the DAC, the CPU will be interrupted 44,100 times every second. Not only does this paralyze the CPU, but any slight delay in the CPU handling the interrupt (due to a higher priority interrupt firing) will cause "Jitter"—a microscopic delay in the DAC update that humans can physically hear as an audio glitch or pop. DMA operates independently of the CPU, guaranteeing perfectly timed, jitter-free data delivery to the DAC.

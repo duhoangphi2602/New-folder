@@ -1,0 +1,55 @@
+/**
+ * @file deadlock_sim.txt
+ * @brief Conceptual FreeRTOS code demonstrating Deadlock prevention via Ordered Locks.
+ */
+
+#include "FreeRTOS.h"
+#include "semphr.h"
+
+SemaphoreHandle_t mutex_i2c;
+SemaphoreHandle_t mutex_uart;
+
+// ==================================================
+// THE BAD ARCHITECTURE (Will cause Deadlock)
+// ==================================================
+void Task_Display() {
+    // Takes I2C, then UART
+    xSemaphoreTake(mutex_i2c, portMAX_DELAY); 
+    // <--- IF PREEMPTED HERE, DISASTER STRIKES
+    xSemaphoreTake(mutex_uart, portMAX_DELAY);
+    
+    // ... work ...
+}
+
+void Task_Sensor() {
+    // Takes UART, then I2C
+    xSemaphoreTake(mutex_uart, portMAX_DELAY);
+    xSemaphoreTake(mutex_i2c, portMAX_DELAY); 
+    
+    // ... work ...
+}
+
+// ==================================================
+// THE GOOD ARCHITECTURE (Ordered Lock Rule)
+// Rule: Always take I2C before UART!
+// ==================================================
+void Task_Display_Fixed() {
+    xSemaphoreTake(mutex_i2c, portMAX_DELAY); 
+    xSemaphoreTake(mutex_uart, portMAX_DELAY);
+    
+    // ... work ...
+    
+    xSemaphoreGive(mutex_uart);
+    xSemaphoreGive(mutex_i2c);
+}
+
+void Task_Sensor_Fixed() {
+    // We swapped the order to match the system-wide rule!
+    xSemaphoreTake(mutex_i2c, portMAX_DELAY);
+    xSemaphoreTake(mutex_uart, portMAX_DELAY); 
+    
+    // ... work ...
+    
+    xSemaphoreGive(mutex_uart);
+    xSemaphoreGive(mutex_i2c);
+}

@@ -1,0 +1,70 @@
+/**
+ * @file event_group_sim.txt
+ * @brief Conceptual FreeRTOS code for syncing multiple initializations.
+ */
+
+#include "FreeRTOS.h"
+#include "event_groups.h"
+
+// 1. Define specific bits (1 shifted left by N)
+#define WIFI_READY_BIT  (1 << 0)  // 0001
+#define GPS_READY_BIT   (1 << 1)  // 0010
+#define AWS_READY_BIT   (1 << 2)  // 0100
+
+// 2. Declare the Event Group globally
+EventGroupHandle_t system_ready_group;
+
+// 3. The Producer Tasks
+void vTaskInitWiFi(void *pvParams) {
+    hardware_connect_wifi(); // Takes 2 seconds
+    
+    // Set the WiFi bit in the Event Group
+    xEventGroupSetBits(system_ready_group, WIFI_READY_BIT);
+    
+    vTaskDelete(NULL); // Task is done, kill it to free RAM
+}
+
+void vTaskInitGPS(void *pvParams) {
+    hardware_get_satellite_fix(); // Takes 4 seconds
+    
+    // Set the GPS bit in the Event Group
+    xEventGroupSetBits(system_ready_group, GPS_READY_BIT);
+    
+    vTaskDelete(NULL);
+}
+
+// 4. The Consumer Task
+void vTaskMainApp(void *pvParams) {
+    
+    // Wait for BOTH bits to be set.
+    // Param 2: The bits to wait for (WIFI | GPS) -> 0011
+    // Param 3: Clear bits on exit? (pdTRUE = yes, reset them to 0)
+    // Param 4: Wait for ALL bits? (pdTRUE = AND logic)
+    // Param 5: Timeout (portMAX_DELAY = sleep forever)
+    
+    xEventGroupWaitBits(
+        system_ready_group,
+        (WIFI_READY_BIT | GPS_READY_BIT), 
+        pdTRUE,                           
+        pdTRUE,                           
+        portMAX_DELAY                     
+    );
+    
+    // WAKES UP HERE!
+    // We strictly guarantee that both WiFi and GPS are fully initialized.
+    while(1) {
+        send_gps_to_aws();
+        vTaskDelay(1000);
+    }
+}
+
+int main() {
+    // 5. Create the Event Group in RAM
+    system_ready_group = xEventGroupCreate();
+    
+    xTaskCreate(vTaskInitWiFi, ...);
+    xTaskCreate(vTaskInitGPS, ...);
+    xTaskCreate(vTaskMainApp, ...);
+    
+    vTaskStartScheduler();
+}

@@ -1,0 +1,35 @@
+/**
+ * @file nm_demangle_sim.txt
+ * @brief Conceptual simulation of C++ Name Mangling and the 'nm' tool.
+ */
+
+==================================================
+1. THE C++ CODE
+==================================================
+int system_id = 42;
+int buffer[100];
+
+void calculate(int x) { }
+void calculate(float x) { }
+
+extern "C" {
+    void raw_c_function() { }
+}
+
+==================================================
+2. RAW 'nm' OUTPUT (arm-none-eabi-nm firmware.elf)
+==================================================
+20000000 D system_id
+20000004 B buffer
+08000100 T _Z9calculatei      <-- Mangled! 'i' for integer
+08000120 T _Z9calculatef      <-- Mangled! 'f' for float
+08000140 T raw_c_function     <-- Not mangled because of extern "C"
+
+==================================================
+3. DEMANGLED 'nm' OUTPUT (arm-none-eabi-nm -C firmware.elf)
+==================================================
+20000000 D system_id
+20000004 B buffer
+08000100 T calculate(int)     <-- Beautifully readable!
+08000120 T calculate(float)
+08000140 T raw_c_function

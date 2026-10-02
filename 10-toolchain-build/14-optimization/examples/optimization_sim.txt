@@ -1,0 +1,54 @@
+/**
+ * @file optimization_sim.txt
+ * @brief Conceptual simulation of -O3 Loop Unrolling and Inlining.
+ */
+
+==================================================
+1. ORIGINAL C++ CODE
+==================================================
+int square(int x) {
+    return x * x;
+}
+
+int main() {
+    int total = 0;
+    for (int i = 0; i < 3; i++) {
+        total += square(i);
+    }
+    return total;
+}
+
+==================================================
+2. COMPILER BEHAVIOR AT -O0
+==================================================
+The compiler generates assembly that exactly matches the code:
+- Set total to 0.
+- Set i to 0.
+- Jump to loop check (is i < 3?).
+- Call function 'square' (Push to stack, jump, pop from stack).
+- Add result to total.
+- Increment i.
+- Jump to loop check...
+Result: Dozens of slow assembly instructions.
+
+==================================================
+3. COMPILER BEHAVIOR AT -O3
+==================================================
+Phase 1: Inlining
+The compiler sees 'square' is tiny. It deletes the function call overhead and pastes the math directly.
+  total += (i * i);
+
+Phase 2: Loop Unrolling
+The compiler sees the loop runs exactly 3 times. Branching (jumping) is slow for a CPU pipeline. It deletes the 'for' loop entirely.
+  total += (0 * 0);
+  total += (1 * 1);
+  total += (2 * 2);
+
+Phase 3: Constant Folding
+The compiler sees that everything is mathematically deterministic at compile time.
+  0 + 0 + 1 + 4 = 5.
+
+Final -O3 Assembly Output:
+  MOV R0, #5
+  BX LR
+Result: 2 instructions. Instant execution.

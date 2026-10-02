@@ -1,0 +1,43 @@
+/**
+ * @file context_sim.txt
+ * @brief Conceptual visualization of RAM and CPU Registers during a Context Switch.
+ */
+
+==================================================
+STATE 1: TASK A IS RUNNING
+==================================================
+CPU Registers:
+R0:  0x05 (Task A's math data)
+R1:  0x0A (Task A's math data)
+PC:  0x08001004 (Executing line 42 of Task A)
+SP:  0x20001000 (Pointing to Task A's Stack)
+
+RAM:
+[0x20001000] TASK A STACK: [Empty]
+[0x20002000] TASK B STACK: [R0=99, R1=42, PC=0x08003440] (Task B's saved context)
+
+==================================================
+STATE 2: THE CONTEXT SWITCH (SysTick Fires)
+==================================================
+The RTOS Scheduler Assembly Code executes:
+
+Step 1: PUSH CPU registers into the RAM address currently in the SP (Task A Stack).
+RAM Updates:
+[0x20001000] TASK A STACK: [R0=05, R1=0A, PC=0x08001004]
+
+Step 2: Change the CPU's Stack Pointer (SP) to point to Task B's Stack.
+CPU SP = 0x20002000
+
+Step 3: POP data out of the RAM address currently in the SP (Task B Stack) into CPU.
+CPU Registers Update:
+R0:  99
+R1:  42
+PC:  0x08003440
+
+==================================================
+STATE 3: TASK B IS RUNNING
+==================================================
+The OS executes a 'Return from Interrupt' (BX LR).
+The CPU instantly resumes executing at PC 0x08003440 (Task B).
+Task B sees R0 is 99 and R1 is 42. It has no idea Task A ever existed.
+Task A's data is safely preserved in RAM at 0x20001000, waiting for its turn.

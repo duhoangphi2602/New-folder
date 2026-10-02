@@ -1,0 +1,38 @@
+/**
+ * @file priority_architecture_sim.txt
+ * @brief Conceptual priority assignment for a Drone Flight Controller.
+ */
+
+==================================================
+THE SYSTEM TASKS
+==================================================
+We are building an RTOS Drone. We have 4 tasks:
+1. UART_Telemetry: Streams data to the pilot's laptop. (Takes 20ms).
+2. Read_Gyroscope: Reads the I2C sensor to detect tilt. MUST happen every 2ms.
+3. Motor_PID_Math: Calculates how fast the props should spin based on Gyro.
+4. Blink_LED: Blinks an LED so the user knows it's turned on.
+
+==================================================
+THE BEGINNER MISTAKE (Human Importance)
+==================================================
+Beginner says: "Telemetry is the most complex code, it's the most important!"
+Priority 4 (High) : UART_Telemetry
+Priority 3        : Motor_PID_Math
+Priority 2        : Read_Gyroscope
+Priority 1 (Low)  : Blink_LED
+
+RESULT: CRASH. The Telemetry task takes 20ms to run. Because it is Priority 4, the RTOS blocks all other tasks for 20ms. The Gyroscope (which MUST read every 2ms) misses 10 readings. The drone flips upside down and hits the ground.
+
+==================================================
+THE PROFESSIONAL ARCHITECTURE (Deadline / RMS)
+==================================================
+Professional says: "Who has the strictest deadline?"
+
+Priority 4 (High) : Read_Gyroscope 
+  -> It only takes 50us to run, but it MUST happen exactly every 2ms. It will preempt everything, do its 50us job, and sleep.
+Priority 3        : Motor_PID_Math
+  -> Needs to run immediately after Gyro.
+Priority 2        : UART_Telemetry
+  -> A background task. It takes 20ms, but it will be safely preempted by the Gyro 10 times during that 20ms. The laptop receives data slightly slower, but the drone stays in the air.
+Priority 1 (Low)  : Blink_LED
+  -> Runs only when the CPU has absolutely nothing else to do.

@@ -1,0 +1,43 @@
+/**
+ * @file compiler_commands_sim.txt
+ * @brief Conceptual simulation of the difference between gcc and g++.
+ */
+
+==================================================
+1. THE SOURCE FILE: app.cpp
+==================================================
+#include <iostream>
+
+int main() {
+    int* ptr = new int(5); // Uses C++ 'new' operator
+    delete ptr;
+    return 0;
+}
+
+==================================================
+2. USING gcc TO BUILD A C++ FILE
+==================================================
+> gcc app.cpp -o app.exe
+
+[Compiler (Stage 2)]
+Compiling app.cpp using C++ rules... SUCCESS! (gcc sees the .cpp extension)
+
+[Linker (Stage 4)]
+Linking with libc.a...
+Error: main.o: In function `main`:
+undefined reference to `operator new(unsigned long)`
+undefined reference to `operator delete(void*, unsigned long)`
+FAILURE!
+
+==================================================
+3. USING g++ TO BUILD A C++ FILE
+==================================================
+> g++ app.cpp -o app.exe
+
+[Compiler (Stage 2)]
+Compiling app.cpp using C++ rules... SUCCESS! (g++ sees the .cpp extension)
+
+[Linker (Stage 4)]
+Linking with libc.a...
+Linking with libstdc++.a...
+SUCCESS!

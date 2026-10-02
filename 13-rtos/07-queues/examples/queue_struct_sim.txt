@@ -1,0 +1,63 @@
+/**
+ * @file queue_struct_sim.txt
+ * @brief Conceptual FreeRTOS code for passing C-Structs through a Queue.
+ */
+
+#include "FreeRTOS.h"
+#include "queue.h"
+
+// 1. Define the Data Structure
+typedef struct {
+    uint8_t sensor_id;
+    float temperature;
+    float humidity;
+} SensorData_t;
+
+// 2. Declare the Queue globally
+QueueHandle_t sensor_queue;
+
+// 3. The Producer Task
+void vTaskSensor(void *pvParameters) {
+    SensorData_t my_data;
+    my_data.sensor_id = 1;
+    
+    while(1) {
+        my_data.temperature = read_temp();
+        my_data.humidity = read_hum();
+        
+        // Push the struct onto the back of the queue.
+        // If queue is full, wait up to 100ms.
+        xQueueSendToBack(sensor_queue, &my_data, 100);
+        
+        vTaskDelay(500); // Read sensor twice a second
+    }
+}
+
+// 4. The Consumer Task
+void vTaskDisplay(void *pvParameters) {
+    SensorData_t received_data;
+    
+    while(1) {
+        // Pop the struct from the front of the queue.
+        // portMAX_DELAY means: Sleep forever until data arrives.
+        if (xQueueReceive(sensor_queue, &received_data, portMAX_DELAY) == pdTRUE) {
+            
+            // WAKES UP HERE! We have the data!
+            printf("Sensor %d: Temp = %.1f, Hum = %.1f\n", 
+                   received_data.sensor_id, 
+                   received_data.temperature, 
+                   received_data.humidity);
+        }
+    }
+}
+
+int main() {
+    // 5. Create the Queue in RAM
+    // Parameter 1: Max number of items (5 slots)
+    // Parameter 2: Size of each item (sizeof(SensorData_t))
+    sensor_queue = xQueueCreate(5, sizeof(SensorData_t));
+    
+    xTaskCreate(vTaskSensor, ...);
+    xTaskCreate(vTaskDisplay, ...);
+    vTaskStartScheduler();
+}

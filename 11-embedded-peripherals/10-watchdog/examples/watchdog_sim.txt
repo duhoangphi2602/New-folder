@@ -1,0 +1,48 @@
+/**
+ * @file watchdog_sim.txt
+ * @brief Conceptual C++ implementation of a robust Watchdog architecture.
+ */
+
+==================================================
+1. THE BAD ARCHITECTURE (Never do this)
+==================================================
+void HAL_UART_RxCpltCallback() {
+    // This interrupt fires every time a byte arrives.
+    // If the main loop freezes, this interrupt might still fire!
+    IWDG->KR = 0xAAAA; // Kicking the dog in an ISR! BAD!
+}
+
+int main() {
+    init_watchdog(); // Set to timeout in 2 seconds
+    
+    while(1) {
+        // ... some code ...
+        
+        // BUG! An I2C sensor disconnected, and this loop runs forever.
+        while(i2c_is_busy()) { } 
+        
+        // The main loop is dead. 
+        // But the UART ISR keeps kicking the dog. 
+        // The device never resets. Total failure.
+    }
+}
+
+==================================================
+2. THE GOOD ARCHITECTURE
+==================================================
+int main() {
+    // 1. Initialize Watchdog (Timeout = 1.0 seconds)
+    IWDG_Init(1000); 
+    
+    while(1) {
+        // 2. Perform all standard, non-blocking tasks
+        read_sensors();
+        process_data();
+        update_display();
+        
+        // 3. Kick the dog exactly once per loop.
+        // If ANY of the functions above freeze, the dog will starve.
+        // After 1 second, the chip will forcefully reboot.
+        IWDG->KR = 0xAAAA; // Feed sequence (Standard STM32 register write)
+    }
+}

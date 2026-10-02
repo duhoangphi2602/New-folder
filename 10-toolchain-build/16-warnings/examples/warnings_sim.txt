@@ -1,0 +1,40 @@
+/**
+ * @file warnings_sim.txt
+ * @brief Conceptual simulation of Compiler Warnings and -Werror.
+ */
+
+==================================================
+1. THE DANGEROUS C++ CODE (app.cpp)
+==================================================
+int process_sensor(int value) {
+    if (value = 5) { // FATAL TYPO: Assignment (=) instead of Equality (==)
+        return 100;
+    }
+} // MISSING RETURN: What if the 'if' is false?
+
+==================================================
+2. COMPILING WITHOUT FLAGS (The Default)
+==================================================
+> arm-none-eabi-g++ app.cpp -o app.o
+Result: SUCCESS. 
+(The compiler generated machine code. The typo will cause the 'if' statement to ALWAYS evaluate to true. The system will malfunction in production).
+
+==================================================
+3. COMPILING WITH -Wall
+==================================================
+> arm-none-eabi-g++ -Wall app.cpp -o app.o
+Result: SUCCESS (with warnings).
+Output:
+  app.cpp:2: warning: suggest parentheses around assignment used as truth value
+  app.cpp:5: warning: control reaches end of non-void function
+(The build still succeeded! The .o file was generated. A lazy developer can still flash it).
+
+==================================================
+4. COMPILING WITH -Wall -Werror (Professional)
+==================================================
+> arm-none-eabi-g++ -Wall -Werror app.cpp -o app.o
+Result: FATAL ERROR. Build Halted.
+Output:
+  app.cpp:2: error: suggest parentheses around assignment [-Werror=parentheses]
+  app.cpp:5: error: control reaches end of non-void function [-Werror=return-type]
+(The compiler refuses to generate the .o file. The developer is FORCED to fix the code).

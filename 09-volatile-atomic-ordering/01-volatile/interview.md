@@ -1,0 +1,10 @@
+# Interview Questions: Volatile
+
+## 1. What exactly does the `volatile` keyword tell the C/C++ compiler?
+**Answer:** The `volatile` keyword tells the compiler that a variable's value can change at any time due to external factors completely invisible to the current thread of execution (such as hardware register updates or Interrupt Service Routines). It legally forbids the compiler from caching the variable in CPU registers or optimizing away redundant reads/writes. The compiler is forced to issue raw Load (`LDR`) and Store (`STR`) assembly instructions to physical RAM every single time the variable is referenced in the C code.
+
+## 2. You have a global variable `bool data_ready = false;` that is set to `true` inside a UART RX Interrupt. The main `while(1)` loop checks this variable. The code works perfectly during development, but when you deploy the Release build, the main loop freezes forever. Why?
+**Answer:** In a Release build (with optimizations like `-O2` or `-O3` enabled), the compiler analyzes the main `while(1)` loop. Because there is no code *inside* the loop that modifies `data_ready`, the compiler assumes `data_ready` will never change. It optimizes the code by reading `data_ready` into a CPU register exactly once before the loop starts. When the UART ISR fires and updates physical RAM, the main loop never notices because it is infinitely checking the cached CPU register. Declaring it as `volatile bool data_ready = false;` forces the main loop to read RAM on every iteration, fixing the bug.
+
+## 3. Does `volatile` guarantee thread safety or atomicity?
+**Answer:** Absolutely not. This is a very common misconception. `volatile` only disables *Compiler* caching. It does nothing to prevent CPU-level Race Conditions. If two RTOS Tasks or an ISR and a Task try to perform a Read-Modify-Write operation (like `counter++`) on a `volatile` variable simultaneously, a Race Condition will still occur because `counter++` requires 3 assembly instructions, which can be preempted halfway through. For thread safety, you must use Mutexes, Semaphores, or `std::atomic`.

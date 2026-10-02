@@ -1,0 +1,44 @@
+/**
+ * @file i2c_frame_sim.txt
+ * @brief Conceptual visualization of an I2C Write Transaction.
+ */
+
+==================================================
+1. THE SCENARIO
+==================================================
+Master (Microcontroller) wants to send the byte 0x42 to a Slave (Address 0x50).
+7-bit Address = 0x50 (Binary: 1010000)
+Write Bit = 0 (Write mode)
+Data = 0x42 (Binary: 01000010)
+
+==================================================
+2. THE TRANSACTION SEQUENCE
+==================================================
+
+Master:  [START]
+Master:  Sends 1 0 1 0 0 0 0 (Address 0x50)
+Master:  Sends 0 (Write bit)
+Master:  Releases SDA line...
+Slave :  Pulls SDA low [ACK!] (Slave says "I am ready")
+
+Master:  Sends 0 1 0 0 0 0 1 0 (Data 0x42)
+Master:  Releases SDA line...
+Slave :  Pulls SDA low [ACK!] (Slave says "I received the byte")
+
+Master:  [STOP]
+
+==================================================
+3. VISUALIZING OPEN-DRAIN CONFLICT (Arbitration)
+==================================================
+What happens if Master A and Master B both send a START condition simultaneously?
+Master A wants to send Address: 1 0 1
+Master B wants to send Address: 1 0 0
+
+Bit 1 (Both want 1): Both release SDA. Pull-up resistor brings SDA to 1. Both see a 1.
+Bit 2 (Both want 0): Both pull SDA to GND. Both see a 0.
+Bit 3 (A wants 1, B wants 0):
+  - Master A releases SDA (expecting the resistor to pull it to 1).
+  - Master B actively pulls SDA to GND.
+  - The line goes to GND (0).
+  - Master A checks the wire. It expected a 1, but sees a 0! 
+  - Master A realizes it lost Arbitration, instantly shuts down, and lets Master B finish.

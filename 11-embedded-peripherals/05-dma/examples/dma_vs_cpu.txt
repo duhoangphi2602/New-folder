@@ -1,0 +1,42 @@
+/**
+ * @file dma_vs_cpu.txt
+ * @brief Conceptual comparison of transmitting 50,000 bytes over SPI.
+ */
+
+==================================================
+1. THE CPU POLLING METHOD (No DMA)
+==================================================
+void update_lcd(uint8_t* image_data) {
+    for (int i = 0; i < 50000; i++) {
+        // Wait for SPI to be ready
+        while ((SPI1->SR & TXE_FLAG) == 0) { }
+        
+        // CPU physically copies the byte from RAM to the SPI register
+        SPI1->DR = image_data[i];
+    }
+}
+RESULT: The CPU spends 50 milliseconds completely paralyzed inside this loop. It cannot respond to buttons, it cannot calculate physics. It is just a highly overpaid delivery boy moving boxes.
+
+==================================================
+2. THE DMA METHOD
+==================================================
+void update_lcd_dma(uint8_t* image_data) {
+    // 1. Tell DMA where the data is in RAM
+    DMA1->MemoryAddress = (uint32_t)image_data;
+    
+    // 2. Tell DMA where the destination is (The SPI hardware register)
+    DMA1->PeripheralAddress = (uint32_t)&(SPI1->DR);
+    
+    // 3. Tell DMA how many bytes to move
+    DMA1->DataLength = 50000;
+    
+    // 4. Start the DMA!
+    DMA1->Control |= ENABLE_FLAG;
+    
+    // THE FUNCTION IMMEDIATELY RETURNS!
+}
+
+RESULT: The CPU spends 2 microseconds configuring the DMA, and then the function exits. 
+The CPU can now go calculate the physics for the next frame of the video game. 
+Meanwhile, the DMA hardware silently pumps 50,000 bytes from RAM to the SPI register in the background. 
+When the DMA finishes, it fires a single "Transfer Complete" interrupt to let the CPU know the LCD is updated.

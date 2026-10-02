@@ -1,0 +1,43 @@
+/**
+ * @file linker_sim.txt
+ * @brief Conceptual simulation of the Linker Relocation phase.
+ */
+
+==================================================
+1. INPUT: main.o (Compiled to offset 0x00)
+==================================================
+Offset 0x00:  [Machine Code for main()]
+Offset 0x10:  CALL [ ????? ]  // Needs address of add()
+
+==================================================
+2. INPUT: math.o (Compiled to offset 0x00)
+==================================================
+Offset 0x00:  [Machine Code for add()]
+
+==================================================
+3. LINKER SCRIPT LAYOUT (.ld)
+==================================================
+MEMORY {
+  FLASH : ORIGIN = 0x08000000, LENGTH = 256K
+}
+
+==================================================
+4. RELOCATION PHASE (Assigning physical addresses)
+==================================================
+The Linker stacks the .text sections into FLASH sequentially:
+
+0x08000000: [main.o .text starts here]
+            [Machine Code for main()]
+
+0x08000020: [math.o .text starts here]
+            [Machine Code for add()]
+
+==================================================
+5. ADDRESS FIX-UP (Overwriting placeholders)
+==================================================
+The Linker knows add() is now permanently located at 0x08000020.
+It goes back to the placeholder inside main() and overwrites it.
+
+Final Executable Binary Code for main():
+0x08000000:  [Machine Code for main()]
+0x08000010:  CALL [ 0x08000020 ]  // Placeholder perfectly resolved!

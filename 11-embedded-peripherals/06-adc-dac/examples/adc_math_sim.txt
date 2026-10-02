@@ -1,0 +1,42 @@
+/**
+ * @file adc_math_sim.txt
+ * @brief Conceptual math for reading a Temperature Sensor via ADC.
+ */
+
+==================================================
+1. THE HARDWARE SETUP
+==================================================
+- Microcontroller: STM32 with a 12-bit ADC.
+- VREF (Max Voltage): 3.3V
+- Sensor: LM35 Analog Temperature Sensor.
+- Sensor Datasheet: Outputs 10 milliVolts (0.01V) per 1 degree Celsius.
+
+==================================================
+2. THE C++ DRIVER LOGIC
+==================================================
+float get_temperature_celsius(uint32_t raw_adc_value) {
+    
+    // 1. Convert the raw integer (0-4095) into physical Voltage (0.0 - 3.3)
+    // Formula: (Raw / 4095.0) * 3.3
+    float voltage = ((float)raw_adc_value / 4095.0f) * 3.3f;
+
+    // 2. Convert the Voltage into Temperature
+    // The LM35 outputs 0.01V for every 1 Degree.
+    // Therefore: Temp = Voltage / 0.01 (which is the same as Voltage * 100)
+    float temperature = voltage * 100.0f;
+
+    return temperature;
+}
+
+==================================================
+3. SIMULATION TRACE
+==================================================
+- The room is 25 degrees Celsius.
+- The LM35 sensor outputs exactly 0.25 Volts onto the GPIO pin.
+- The ADC hardware measures 0.25V and converts it to an integer.
+  (0.25 / 3.3) * 4095 = 310.2
+- The hardware register stores the integer: 310
+
+Your C++ code reads '310'.
+- voltage = (310 / 4095.0) * 3.3 = 0.2498 Volts
+- temperature = 0.2498 * 100 = 24.98 Degrees Celsius.

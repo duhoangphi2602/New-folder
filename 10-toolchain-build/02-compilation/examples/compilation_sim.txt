@@ -1,0 +1,44 @@
+/**
+ * @file compilation_sim.txt
+ * @brief Conceptual simulation of the C++ Compiler output (Stage 2).
+ */
+
+==================================================
+1. C++ INPUT (From Preprocessor)
+==================================================
+int calculate(int a) {
+    int b = 10;
+    int c = a + b;
+    return c;
+}
+
+==================================================
+2. COMPILER OUTPUT WITHOUT OPTIMIZATION (-O0)
+==================================================
+/* The compiler translates it exactly as written. Very slow, uses lots of RAM. */
+calculate:
+    PUSH    {R7}         ; Save frame pointer
+    SUB     SP, SP, #12  ; Allocate 12 bytes on Stack for local variables
+    STR     R0, [SP, #8] ; Store 'a' on stack
+    MOV     R3, #10      ; R3 = 10
+    STR     R3, [SP, #4] ; Store 'b' on stack
+    LDR     R2, [SP, #8] ; Load 'a' from stack
+    LDR     R3, [SP, #4] ; Load 'b' from stack
+    ADD     R3, R2, R3   ; R3 = a + b
+    STR     R3, [SP, #0] ; Store 'c' on stack
+    LDR     R0, [SP, #0] ; Load 'c' into R0 (Return register)
+    ADD     SP, SP, #12  ; Deallocate Stack
+    POP     {R7}         ; Restore frame pointer
+    BX      LR           ; Return from function
+
+
+==================================================
+3. COMPILER OUTPUT WITH OPTIMIZATION (-O3)
+==================================================
+/* The compiler analyzes the AST, realizes the local variables are useless, 
+   and performs the math directly in the CPU registers. */
+calculate:
+    ADD     R0, R0, #10  ; Simply add 10 to input 'a' (R0), keep result in R0.
+    BX      LR           ; Return from function.
+
+/* Result: 14 assembly instructions reduced to 2 instructions! */

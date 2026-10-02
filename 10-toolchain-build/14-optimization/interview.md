@@ -1,0 +1,10 @@
+# Interview Questions: Optimization
+
+## 1. What is the fundamental difference in strategy between `-O3` and `-Os`?
+**Answer:** `-O3` optimizes strictly for execution speed. It will aggressively inline functions and unroll loops, which eliminates branch-prediction penalties and function-call overhead, making the code extremely fast. However, this duplicates machine code, resulting in a significantly larger binary. `-Os` optimizes strictly for binary size. It avoids loop unrolling, aggressively reuses code blocks, and prioritizes a small memory footprint, which is often the most critical requirement for microcontrollers with highly limited Flash memory.
+
+## 2. You are debugging a program using an IDE (GDB). When you step through the code, the yellow highlight jumps wildly back and forth, and when you hover over variables, the IDE says "Variable optimized out". What is happening?
+**Answer:** The program was compiled with `-O2` or `-O3`. The compiler aggressively analyzed the Abstract Syntax Tree and completely restructured the logic to improve performance. It deleted variables, combined mathematical steps, and reordered execution. When the debugger tries to map the current Program Counter (PC) back to the original source code using the DWARF metadata, the mapping is shattered. To debug cleanly, you must recompile the firmware using `-O0` (No optimization) or `-Og` (Optimize for debugging), which preserves the linear flow of the source code.
+
+## 3. Explain the "As-If" rule in C++ compiler optimization.
+**Answer:** The "As-If" rule is a foundational principle of the C++ standard. It states that the compiler is allowed to perform any transformation, deletion, or reordering of the code it desires, *as long as* the final observable behavior of the program remains identical to what the programmer wrote. Observable behavior is strictly defined as reading/writing `volatile` data (like hardware registers), performing I/O, or calling library functions with unknown side effects. If a complex math calculation does not ultimately result in an observable behavior, the compiler is legally mandated by the rule to delete it entirely as Dead Code.

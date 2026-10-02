@@ -1,0 +1,10 @@
+# Interview Questions: Volatile vs Atomic
+
+## 1. Does the `volatile` keyword make a variable thread-safe? Explain your reasoning.
+**Answer:** No, `volatile` does not make a variable thread-safe. `volatile` only dictates how the *Compiler* handles the variable (forbidding it from caching the value in CPU registers). It does absolutely nothing to manage how the *Hardware* executes the instructions. If a variable requires a Read-Modify-Write operation (like `counter++`), it will take at least 3 assembly instructions (`LDR`, `ADD`, `STR`). An interrupt or an RTOS context switch can easily happen between the `LDR` and `STR` instructions, resulting in a Race Condition and data corruption, regardless of the `volatile` keyword.
+
+## 2. In what specific scenario would you combine them and write `volatile std::atomic<int> my_var;`?
+**Answer:** This combination is used when a variable undergoes Read-Modify-Write operations (requiring `std::atomic` to ensure hardware-level indivisibility) AND is shared between an Interrupt Service Routine (ISR) and a normal execution thread (requiring `volatile` to prevent the compiler from optimizing away memory accesses, since ISRs fire asynchronously outside the compiler's view). For example, a global hardware-event counter that is incremented inside an ISR (`my_var++`) and periodically read and reset by the main thread.
+
+## 3. If `std::atomic` ensures safe memory access, why don't we just use `std::atomic` for memory-mapped hardware registers instead of `volatile`?
+**Answer:** Hardware registers (like a GPIO port) are specific physical memory addresses. `std::atomic` is a C++ template class that encapsulates a value and manages its concurrent access. You cannot easily map a C++ `std::atomic` object directly to a raw, predefined physical hardware address (e.g., `0x40020000`). Furthermore, the hardware itself is inherently atomic at the bus level. For hardware registers, we don't need C++ to enforce software atomicity; we just need to stop the compiler from caching the reads and writes, which is exactly what a raw `volatile` pointer does perfectly.

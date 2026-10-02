@@ -1,0 +1,66 @@
+/**
+ * @file soft_timer_sim.txt
+ * @brief Conceptual FreeRTOS code for Software Timers.
+ */
+
+#include "FreeRTOS.h"
+#include "timers.h"
+
+TimerHandle_t backlight_timer;
+TimerHandle_t blink_timer;
+
+// 1. The Callback Functions
+// MUST BE FAST! NO vTaskDelay ALLOWED HERE!
+
+void Backlight_Callback(TimerHandle_t xTimer) {
+    // This is a One-Shot timer. It turns the screen off after 5s.
+    turn_off_lcd_backlight();
+}
+
+void Blink_Callback(TimerHandle_t xTimer) {
+    // This is an Auto-Reload timer. It toggles the LED.
+    toggle_status_led();
+}
+
+// 2. The Main Application Task
+void vTaskApp(void *pvParameters) {
+    while(1) {
+        if (user_pressed_screen()) {
+            turn_on_lcd_backlight();
+            
+            // Start (or Restart) the 5-second timer!
+            // If the user taps the screen again at 4 seconds, this resets
+            // the timer back to 0, keeping the screen alive.
+            xTimerStart(backlight_timer, 0); 
+        }
+        vTaskDelay(50);
+    }
+}
+
+int main() {
+    // 3. Create the Timers
+    
+    // One-Shot Timer: 5000ms
+    backlight_timer = xTimerCreate(
+        "LCD_Timer",         // Text Name
+        pdMS_TO_TICKS(5000), // Period (5 seconds)
+        pdFALSE,             // Auto-Reload? FALSE (One-Shot)
+        (void *)0,           // Timer ID (Optional)
+        Backlight_Callback   // The function to execute
+    );
+
+    // Auto-Reload Timer: 500ms
+    blink_timer = xTimerCreate(
+        "Blink_Timer",
+        pdMS_TO_TICKS(500),
+        pdTRUE,              // Auto-Reload? TRUE (Continuous)
+        (void *)1,
+        Blink_Callback
+    );
+
+    // Start the blink timer immediately
+    xTimerStart(blink_timer, 0);
+
+    xTaskCreate(vTaskApp, ...);
+    vTaskStartScheduler();
+}

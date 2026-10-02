@@ -1,0 +1,47 @@
+/**
+ * @file assembler_sim.txt
+ * @brief Conceptual simulation of the Assembler lookup process.
+ */
+
+==================================================
+1. ASSEMBLY INPUT (.s file from Compiler)
+==================================================
+MOV R0, #12
+ADD R1, R0
+BX  LR
+
+==================================================
+2. ASSEMBLER LOOKUP DICTIONARY (ARM Thumb-2 ISA)
+==================================================
+Instruction Format for MOV (Immediate):
+[0 0 1 0] [Register (3 bits)] [Value (8 bits)]
+
+Instruction Format for ADD (Register):
+[0 1 0 0] [0 1 0 0] [Register Dst (3 bits)] [Register Src (3 bits)]
+
+Instruction Format for BX (Branch Exchange):
+[0 1 0 0] [0 1 1 1] [0 1 1 1] [Register (3 bits)] [0 0 0 0]
+
+==================================================
+3. THE TRANSLATION PROCESS
+==================================================
+Line 1: MOV R0, #12
+- Register R0 is binary '000'
+- Value 12 is binary '0000 1100'
+- Combine: 0010 000 00001100
+- Hex representation: 0x200C
+
+Line 2: ADD R1, R0
+- Dst R1 is '001', Src R0 is '000'
+- Combine: 0100 0100 001 000
+- Hex representation: 0x4408
+
+Line 3: BX LR
+- LR (Link Register) is Register 14, binary '1110'
+- Combine: 0100 0111 0111 1110 0000
+- Hex representation: 0x4770
+
+==================================================
+4. FINAL BINARY OUTPUT (Inside the .o Object File)
+==================================================
+0C 20 08 44 70 47

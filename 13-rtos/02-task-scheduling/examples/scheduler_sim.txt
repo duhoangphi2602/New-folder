@@ -1,0 +1,39 @@
+/**
+ * @file scheduler_sim.txt
+ * @brief Conceptual timeline of the FreeRTOS Preemptive Scheduler.
+ */
+
+==================================================
+1. THE SCENARIO
+==================================================
+SysTick Config: 1 ms
+Task 1 (Sensor): Priority 3 (Highest). Blocked for 5ms.
+Task 2 (WiFi)  : Priority 1 (Lowest). Ready. Doing massive math calculation.
+Task 3 (Idle)  : Priority 0. Ready. (Built-in FreeRTOS task that just loops).
+
+==================================================
+2. THE TIMELINE
+==================================================
+
+T = 0 ms (SysTick Fires)
+- Scheduler checks Ready List. 
+- Sensor is Blocked. WiFi is Ready. Idle is Ready.
+- WiFi (Prio 1) > Idle (Prio 0). 
+- ACTION: CPU runs WiFi Task.
+
+T = 1 ms, 2 ms, 3 ms, 4 ms (SysTick Fires)
+- Scheduler checks Ready List. Sensor is still Blocked.
+- ACTION: CPU continues running WiFi Task.
+
+T = 5 ms (SysTick Fires)
+- The OS decrements the Blocked timer for the Sensor task. It hits 0!
+- Sensor Task is moved from the [Blocked List] to the [Ready List].
+- Scheduler checks Ready List: Sensor (3), WiFi (1), Idle (0).
+- Sensor (3) is strictly greater than WiFi (1).
+- ACTION (PREEMPTION): The OS violently rips the CPU away from the WiFi task mid-calculation. The CPU runs the Sensor task.
+
+T = 6 ms
+- Sensor task finishes reading I2C. It explicitly calls `vTaskDelay(5)`.
+- The OS immediately moves Sensor Task back to the [Blocked List].
+- Scheduler checks Ready List: WiFi (1), Idle (0).
+- ACTION: The OS restores the CPU to the WiFi task, which resumes its math exactly where it left off.

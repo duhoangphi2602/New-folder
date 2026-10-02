@@ -1,0 +1,41 @@
+/**
+ * @file timer_math_sim.txt
+ * @brief Mathematical breakdown of configuring a Hardware Timer.
+ */
+
+==================================================
+1. THE SCENARIO
+==================================================
+- Your Microcontroller's System Clock (SYSCLK) is 84 MHz (84,000,000 Hz).
+- You want to blink an LED exactly once every 0.5 seconds (2 Hz).
+- You need the Timer Update Interrupt to fire exactly twice a second.
+
+==================================================
+2. THE FORMULA
+==================================================
+Interrupt_Frequency = SYSCLK / ((PSC + 1) * (ARR + 1))
+
+*Note: The +1 is required because the registers are 0-indexed. 
+Setting PSC to 0 means "Divide by 1". Setting PSC to 83 means "Divide by 84".*
+
+==================================================
+3. THE CONFIGURATION
+==================================================
+Step 1: Set the Prescaler (PSC) to slow down the 84 MHz clock.
+Let's divide by 8400 to get a nice, round 10,000 Hz timer frequency.
+PSC = 8400 - 1 = 8399.
+
+Now, the timer ticks 10,000 times per second.
+
+Step 2: Set the Auto-Reload Register (ARR) to set the ceiling.
+We want the interrupt to fire every 0.5 seconds.
+If the timer ticks 10,000 times in 1 second, it will tick 5,000 times in 0.5 seconds.
+ARR = 5000 - 1 = 4999.
+
+==================================================
+4. VERIFICATION
+==================================================
+Interrupt_Frequency = 84,000,000 / ((8399 + 1) * (4999 + 1))
+Interrupt_Frequency = 84,000,000 / (8400 * 5000)
+Interrupt_Frequency = 84,000,000 / 42,000,000
+Interrupt_Frequency = 2 Hz (Exactly every 0.5 seconds!)

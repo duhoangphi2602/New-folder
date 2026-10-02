@@ -1,0 +1,43 @@
+/**
+ * @file cross_compile_diagram.txt
+ * @brief Conceptual diagram of the Cross-Compilation architecture.
+ */
+
+==================================================
+                 THE HOST (Your PC)
+==================================================
+OS: Windows 11 / Ubuntu
+CPU: Intel Core i7 (x86_64 architecture)
+RAM: 16 GB
+
+[Source Code] 
+  main.cpp 
+
+       |
+       | (Fed into the Cross-Compiler running on the Host)
+       v
+
+[The Toolchain]
+  arm-none-eabi-g++.exe  (An x86 program running on Intel hardware!)
+  |
+  |--> Uses ARM Instruction Set Dictionary
+  |--> Links 'newlib-nano' (Embedded Standard Library)
+  |
+  v
+
+[The Output]
+  firmware.bin  (ARM machine code, useless to the Host PC)
+
+       |
+       | (Flashed via USB/ST-Link)
+       v
+
+==================================================
+                 THE TARGET (Microcontroller)
+==================================================
+OS: Bare-metal (None)
+CPU: STM32F4 (ARM Cortex-M4 architecture)
+RAM: 128 KB
+
+[Execution]
+  The chip executes the ARM machine code perfectly.

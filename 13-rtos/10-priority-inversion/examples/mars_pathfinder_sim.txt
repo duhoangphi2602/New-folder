@@ -1,0 +1,35 @@
+/**
+ * @file mars_pathfinder_sim.txt
+ * @brief Conceptual breakdown of the NASA Mars Pathfinder Priority Inversion.
+ */
+
+==================================================
+1. THE NASA ARCHITECTURE (1997)
+==================================================
+The Mars Pathfinder rover used the commercial VxWorks RTOS.
+It had an "Information Bus" (a shared memory bank protected by a Mutex).
+
+Task 1: Bus Management Task (HIGH PRIORITY). 
+  -> Runs very frequently to move critical data in/out of the Information Bus.
+Task 2: Communications Task (MEDIUM PRIORITY). 
+  -> Runs occasionally for a long time to format data to send to Earth.
+Task 3: Meteorological Task (LOW PRIORITY). 
+  -> Runs infrequently to gather weather data and save it to the Information Bus.
+
+==================================================
+2. THE FAILURE ON MARS
+==================================================
+- The Meteorological Task (LOW) grabbed the Mutex to write weather data.
+- An interrupt woke up the Bus Management Task (HIGH). It tried to grab the Mutex, failed, and Blocked.
+- The Communications Task (MED) woke up. Because it was Prio 2 and the Weather task was Prio 1, the Comm task preempted the Weather task.
+- The Comm task ran for a very long time.
+- The Weather task was frozen, unable to release the Mutex.
+- The Bus Management Task (HIGH) was starved for so long that a hardware Watchdog Timer assumed the system had crashed, and forcefully rebooted the entire rover.
+- This happened repeatedly, causing the rover to constantly reset on Mars.
+
+==================================================
+3. THE OVER-THE-AIR FIX
+==================================================
+NASA engineers on Earth debugged the issue using an identical replica rover. They realized they had created a Mutex without enabling Priority Inheritance!
+They uploaded a C-code patch to Mars that flipped a single boolean flag in the RTOS Mutex initialization function to enable Priority Inheritance. 
+The system worked flawlessly afterward.

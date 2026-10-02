@@ -1,0 +1,48 @@
+/**
+ * @file object_file_sim.txt
+ * @brief Conceptual simulation of the internals of two Object Files.
+ */
+
+==================================================
+1. SOURCE FILES
+==================================================
+// --- math.cpp ---
+int global_offset = 5;
+
+int add(int a, int b) {
+    return a + b + global_offset;
+}
+
+// --- main.cpp ---
+extern int global_offset;
+int add(int a, int b); // Declaration
+
+int main() {
+    global_offset = 10;
+    return add(2, 3);
+}
+
+==================================================
+2. INSIDE math.o (Symbol Table)
+==================================================
+[SECTIONS]
+.data (size 4 bytes): 05 00 00 00
+.text (size 12 bytes): [Raw Binary for add function]
+
+[SYMBOL TABLE]
+00000000 D global_offset  (D = Defined in Data section, at offset 0)
+00000000 T add            (T = Defined in Text section, at offset 0)
+
+
+==================================================
+3. INSIDE main.o (Symbol Table)
+==================================================
+[SECTIONS]
+.text (size 24 bytes): [Raw Binary for main function]
+                       [Placeholder for global_offset address]
+                       [Placeholder for add address]
+
+[SYMBOL TABLE]
+00000000 T main           (T = Defined in Text section, at offset 0)
+         U global_offset  (U = Undefined! I need this variable!)
+         U add            (U = Undefined! I need this function!)

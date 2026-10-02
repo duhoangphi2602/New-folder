@@ -1,0 +1,32 @@
+/**
+ * @file command_sim.txt
+ * @brief Anatomy of a professional compiler command.
+ */
+
+==================================================
+THE COMMAND
+==================================================
+arm-none-eabi-g++ -c main.cpp -o main.o -std=c++17 -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -I core/inc -DSTM32F411xE
+
+==================================================
+THE BREAKDOWN
+==================================================
+1. [The Tool] 
+   arm-none-eabi-g++ : Use the C++ cross-compiler for bare-metal ARM.
+
+2. [The Action]
+   -c main.cpp       : Compile only. Do not Link. Stop at Stage 3.
+   -o main.o         : Output the result into a file named main.o.
+
+3. [The Language Rules]
+   -std=c++17        : Strictly enforce modern C++17 syntax and features.
+
+4. [The Hardware Configuration]
+   -mcpu=cortex-m4   : Generate machine code specifically for the M4 core.
+   -mthumb           : Use the dense 16-bit instruction set (mandatory for M-class).
+   -mfloat-abi=hard  : Pass decimals in hardware registers.
+   -mfpu=fpv4-sp-d16 : The specific FPU silicon on the STM32F411.
+
+5. [The Environment]
+   -I core/inc       : Tell the Preprocessor to look inside core/inc/ for headers.
+   -DSTM32F411xE     : Tell the Preprocessor to define the macro STM32F411xE globally.

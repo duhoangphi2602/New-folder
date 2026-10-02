@@ -1,0 +1,53 @@
+/**
+ * @file isr_sync_sim.txt
+ * @brief Conceptual FreeRTOS code for syncing an ISR to a Task.
+ */
+
+#include "FreeRTOS.h"
+#include "semphr.h"
+
+// 1. Declare the Binary Semaphore globally
+SemaphoreHandle_t dma_complete_sem;
+
+// 2. The Task that does the heavy lifting (High Priority)
+void vTaskProcessImage(void *pvParameters) {
+    while(1) {
+        // Task goes to sleep indefinitely, consuming 0% CPU.
+        xSemaphoreTake(dma_complete_sem, portMAX_DELAY);
+        
+        // --- WAKES UP HERE ---
+        // The DMA just finished transferring a 1MB image!
+        // The RTOS has preempted lower-priority tasks to let us run.
+        apply_image_filters(); // Takes 50ms to run
+        
+        // Loop repeats and task goes back to sleep.
+    }
+}
+
+// 3. The Hardware Interrupt Service Routine (ISR)
+// Fires exactly when the DMA hardware finishes its background transfer.
+void DMA1_Stream5_IRQHandler() {
+    
+    // Clear hardware interrupt flag
+    DMA1->IFCR = CLEAR_TC_FLAG;
+    
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    
+    // 4. GIVE the semaphore.
+    // We MUST use the FromISR version of the API.
+    xSemaphoreGiveFromISR(dma_complete_sem, &xHigherPriorityTaskWoken);
+    
+    // 5. If giving this semaphore woke up vTaskProcessImage (which has a 
+    // higher priority than whatever the CPU was doing before the interrupt),
+    // force an immediate Context Switch as soon as the ISR exits.
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+int main() {
+    dma_complete_sem = xSemaphoreCreateBinary();
+    
+    // Create task with high priority (Priority 3)
+    xTaskCreate(vTaskProcessImage, "ImageProc", 1024, NULL, 3, NULL);
+    
+    vTaskStartScheduler();
+}

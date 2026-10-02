@@ -1,0 +1,10 @@
+# Interview Questions: Linker Script
+
+## 1. What is the fundamental difference between VMA (Virtual Memory Address) and LMA (Load Memory Address)?
+**Answer:** The VMA is the memory address where a section of code or data expects to live while the program is actively *executing*. The LMA is the physical memory address where that same section is permanently *stored* when the microcontroller loses power. For code (`.text`), the VMA and LMA are usually the same (Flash memory). However, for initialized global variables (`.data`), the VMA must be in RAM (so the variables can be modified), but the LMA must be in Flash (to preserve the initial values). The Linker configures this mapping, and the Startup Code physically copies the data from the LMA to the VMA on boot.
+
+## 2. In a bare-metal embedded system, where exactly does the Linker Script place the Interrupt Vector Table, and why?
+**Answer:** The Linker Script explicitly places the Interrupt Vector Table (often named the `.isr_vector` section) at the absolute lowest address of Flash memory (e.g., `0x08000000` on STM32). This is because it is a strict, hardwired requirement of the ARM Cortex-M silicon architecture. When the chip receives power, the hardware blindly reads the first 4 bytes of memory to initialize the Stack Pointer, and the second 4 bytes to find the address of the `Reset_Handler`. If the Linker placed the Vector Table anywhere else, the CPU would boot into random garbage and instantly crash.
+
+## 3. How does the Assembly Startup Code know how many bytes of `.bss` data it needs to initialize with zeros?
+**Answer:** The Assembly Startup Code has no hardcoded sizes. Instead, it relies on exported symbols from the Linker Script. Inside the `.ld` file, symbols like `_sbss` (Start of BSS) and `_ebss` (End of BSS) are assigned to the exact memory addresses where the Linker decided to place the `.bss` section. The Startup Code imports these symbols, calculates the difference between them (`_ebss - _sbss`), and loops that exact number of times, writing zeros to RAM.

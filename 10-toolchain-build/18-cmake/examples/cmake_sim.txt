@@ -1,0 +1,34 @@
+/**
+ * @file cmake_sim.txt
+ * @brief Conceptual simulation of the two-step CMake workflow.
+ */
+
+==================================================
+STEP 1: GENERATION (Running CMake)
+==================================================
+> mkdir build
+> cd build
+> cmake ..
+
+Output:
+-- The CXX compiler identification is GNU 10.3.1 (arm-none-eabi-g++)
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/arm-none-eabi-g++ - skipped
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /project/build
+
+Result: CMake has scanned your project, resolved all header dependencies, and written a massive, highly complex 'Makefile' inside the 'build' folder. No code has been compiled yet!
+
+==================================================
+STEP 2: BUILDING (Running Make)
+==================================================
+> make
+
+Output:
+[ 33%] Building CXX object CMakeFiles/firmware.elf.dir/main.cpp.o
+[ 66%] Building CXX object CMakeFiles/firmware.elf.dir/sensor.cpp.o
+[100%] Linking CXX executable firmware.elf
+[100%] Built target firmware.elf
+
+Result: The 'make' utility read the generated Makefile, invoked GCC to compile the two source files, and successfully linked the final executable.

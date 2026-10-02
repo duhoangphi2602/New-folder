@@ -1,0 +1,37 @@
+/**
+ * @file spi_shift_sim.txt
+ * @brief Conceptual visualization of the SPI Circular Shift Register.
+ */
+
+==================================================
+1. INITIAL STATE
+==================================================
+Master wants to send Command: 0xA5 (1010 0101)
+Slave has Temperature Data ready: 0x42 (0100 0010)
+
+[MASTER SHIFT REGISTER]          [SLAVE SHIFT REGISTER]
+  | 1 0 1 0 0 1 0 1 |              | 0 1 0 0 0 0 1 0 |
+      (MOSI Wire) --->                 ---> (MISO Wire)
+
+==================================================
+2. DURING THE CLOCK PULSES
+==================================================
+As the Master generates 8 clock pulses on SCK, the registers shift.
+Bit by bit, the Master's data shifts right into the Slave (MOSI).
+Simultaneously, the Slave's data shifts left into the Master (MISO).
+
+(After 4 clock pulses):
+[MASTER]                           [SLAVE]
+| 0 0 1 0  1 0 1 0 |  -->MOSI-->   | 0 1 0 1  0 1 0 0 |
+           <--MISO<--
+
+==================================================
+3. FINAL STATE
+==================================================
+After exactly 8 clock pulses, the bytes have perfectly swapped places!
+
+[MASTER SHIFT REGISTER]          [SLAVE SHIFT REGISTER]
+  | 0 1 0 0 0 0 1 0 | (0x42)       | 1 0 1 0 0 1 0 1 | (0xA5)
+
+The Master now reads its register to get the Slave's Temperature (0x42).
+The Slave now reads its register to get the Master's Command (0xA5).

@@ -1,0 +1,10 @@
+# Interview Questions: FreeRTOS Config
+
+## 1. What is the purpose of `configTOTAL_HEAP_SIZE` in FreeRTOS, and how does it differ from standard `malloc()`?
+**Answer:** In deeply embedded systems, standard C `malloc()` is generally considered unsafe because it is non-deterministic (it takes a variable amount of time to find free memory) and is highly susceptible to heap fragmentation. FreeRTOS bypasses the standard C library heap entirely. `configTOTAL_HEAP_SIZE` defines a massive, statically allocated byte array (e.g., `uint8_t ucHeap[10240];`). FreeRTOS uses its own internal memory allocation algorithms (like `heap_4.c`) to carve out chunks from this specific array whenever you create a Task, Queue, or Mutex. This ensures deterministic allocation and protects the OS memory pool from standard application memory leaks.
+
+## 2. If you set `configTICK_RATE_HZ` to 1000, what is the smallest possible delay you can achieve using `vTaskDelay()`?
+**Answer:** 1 millisecond. The RTOS Scheduler only evaluates Blocked timers when the hardware SysTick interrupt fires. If the Tick Rate is 1000 Hz, the interrupt fires exactly once every 1 millisecond. Therefore, the resolution of the RTOS is 1ms. If you need a delay of 50 microseconds, you cannot use RTOS APIs; you must use a bare-metal Hardware Timer to generate a microsecond-accurate interrupt, or use a blocking hardware `nop` delay (though blocking delays are generally bad practice in an RTOS).
+
+## 3. How does FreeRTOS detect a Stack Overflow if `configCHECK_FOR_STACK_OVERFLOW` is set to 2?
+**Answer:** FreeRTOS allocates a specific chunk of RAM for a task's stack. When Method 2 is enabled, during the creation of the task, the RTOS fills the very end of the stack's memory block with a known "magic byte" pattern (e.g., `0xA5A5A5A5`). Every single time the RTOS performs a Context Switch, it inspects those last few bytes of the task being swapped out. If the magic pattern has been overwritten or altered, the RTOS knows with 100% certainty that the task pushed data past its boundaries, and it immediately calls `vApplicationStackOverflowHook()`.

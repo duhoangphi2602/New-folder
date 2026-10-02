@@ -1,0 +1,62 @@
+/**
+ * @file architecture_sim.txt
+ * @brief Conceptual comparison of code structure.
+ */
+
+==================================================
+1. BARE-METAL ARCHITECTURE
+==================================================
+// Everything is tightly coupled.
+// You must manually manage timing using millis().
+
+uint32_t last_wifi = 0;
+uint32_t last_sensor = 0;
+
+int main() {
+    while(1) {
+        if (millis() - last_sensor >= 10) {
+            read_sensor();
+            last_sensor = millis();
+        }
+        
+        if (millis() - last_wifi >= 1000) {
+            process_wifi(); // WARNING: If this takes 500ms, the sensor misses 50 reads!
+            last_wifi = millis();
+        }
+    }
+}
+
+==================================================
+2. RTOS ARCHITECTURE (FreeRTOS)
+==================================================
+// The logic is completely decoupled into independent mini-programs.
+
+void vTaskSensor(void *pvParameters) {
+    while(1) {
+        read_sensor();
+        vTaskDelay(10); // Put this task to sleep for exactly 10ms.
+    }
+}
+
+void vTaskWiFi(void *pvParameters) {
+    while(1) {
+        process_wifi(); // Even if this takes 500ms...
+        vTaskDelay(1000); 
+    }
+}
+
+int main() {
+    // Register tasks with the OS
+    xTaskCreate(vTaskSensor, "Sensor", 128, NULL, 2, NULL); // Priority 2 (High)
+    xTaskCreate(vTaskWiFi, "WiFi", 512, NULL, 1, NULL);     // Priority 1 (Low)
+    
+    // Start the OS! The RTOS takes control forever.
+    vTaskStartScheduler(); 
+    
+    return 0; // We never reach here.
+}
+
+// RESULT: When process_wifi() is running, the RTOS will physically pause it
+// every 10ms, jump to the Sensor task to read data, and jump back to WiFi.
+// The sensor never misses a read, and the WiFi developer doesn't even need
+// to know the Sensor code exists.

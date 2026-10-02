@@ -1,0 +1,43 @@
+/**
+ * @file rtc_bcd_sim.txt
+ * @brief Conceptual explanation of BCD (Binary-Coded Decimal) in RTC registers.
+ */
+
+==================================================
+1. THE BCD FORMAT
+==================================================
+Almost all RTCs store the time in BCD format, not standard binary.
+In standard binary, the number 45 is: 0010 1101 (0x2D).
+In BCD, every decimal DIGIT is stored in its own 4-bit block (a nibble).
+The number 4 is 0100.
+The number 5 is 0101.
+So in BCD, 45 is stored as: 0100 0101 (0x45).
+
+Notice how a BCD value of 0x45 literally reads as "45" in hexadecimal! This makes it incredibly easy to extract the tens and units digits on an LCD screen.
+
+==================================================
+2. READING THE RTC_TR (Time Register)
+==================================================
+Let's say it is currently 14:35:59 (2:35 PM and 59 seconds).
+The RTC hardware stores this in a single 32-bit register in BCD format.
+
+[  RESERVED  ] [   HOURS  ] [  MINUTES ] [  SECONDS ]
+[ 0000 0000  ] [ 0001 0100] [ 0011 0101] [ 0101 1001]
+                 (1)  (4)     (3)  (5)     (5)  (9)
+HEX: 0x00143559
+
+==================================================
+3. C++ BCD TO DECIMAL CONVERSION
+==================================================
+If you read the Seconds byte (0x59) into C++, it will evaluate to the integer 89 (because 0x59 in Hex is 89 in Decimal). This is wrong! You must convert it.
+
+uint8_t BCD_to_Decimal(uint8_t bcd_val) {
+    // Extract the Tens digit (shift right 4 bits) and multiply by 10.
+    // Extract the Units digit (mask the lower 4 bits).
+    return ((bcd_val >> 4) * 10) + (bcd_val & 0x0F);
+}
+
+Example for 0x59:
+Tens  = (0x59 >> 4) = 5.   (5 * 10 = 50)
+Units = (0x59 & 0x0F) = 9.
+Total = 50 + 9 = 59 seconds. Perfect!

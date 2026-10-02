@@ -1,0 +1,37 @@
+/**
+ * @file tuple_breakdown.txt
+ * @brief Examples of translating common toolchain names.
+ */
+
+==================================================
+1. BARE-METAL MICROCONTROLLERS
+==================================================
+Command: arm-none-eabi-g++
+Target:  32-bit ARM (Cortex-M)
+Vendor:  Generic (none)
+OS:      Bare-metal (none)
+ABI:     Embedded ABI
+Use Case: Compiling C++ firmware for an STM32 or NXP LPC.
+
+Command: xtensa-esp32-elf-gcc
+Target:  Xtensa Architecture
+Vendor:  Espressif (ESP32)
+OS:      Bare-metal (Outputs ELF files)
+Use Case: Compiling C firmware for an ESP32 microcontroller.
+
+==================================================
+2. EMBEDDED LINUX (e.g., Raspberry Pi)
+==================================================
+Command: aarch64-linux-gnu-gcc
+Target:  64-bit ARM
+Vendor:  Generic
+OS:      Linux OS
+ABI:     GNU (Standard Linux ABI)
+Use Case: Compiling a desktop-style C application that will run on a Raspberry Pi 4 running Ubuntu. (Cannot run on a bare-metal microcontroller).
+
+Command: arm-linux-gnueabihf-g++
+Target:  32-bit ARM
+Vendor:  Generic
+OS:      Linux OS
+ABI:     GNU EABI with Hard Float
+Use Case: Compiling a C++ app for an older Raspberry Pi (32-bit) that has a hardware math coprocessor.

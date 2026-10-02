@@ -1,0 +1,43 @@
+/**
+ * @file pwm_timeline_sim.txt
+ * @brief Conceptual visualization of a Timer generating a 75% Duty Cycle PWM signal.
+ */
+
+==================================================
+1. THE CONFIGURATION
+==================================================
+- Timer Frequency: Configured via PSC to tick every 1 microsecond.
+- ARR (Ceiling): 100 
+  -> This means the total cycle takes 100 microseconds (Frequency = 10 kHz).
+- CCR (Compare): 75
+  -> This means the Duty Cycle is 75%.
+
+==================================================
+2. THE HARDWARE TIMELINE (1 Cycle = 100 Ticks)
+==================================================
+
+Tick 0:   Timer resets. Pin goes HIGH (3.3V).
+Tick 10:  Timer < CCR (10 < 75). Pin remains HIGH.
+Tick 50:  Timer < CCR (50 < 75). Pin remains HIGH.
+Tick 75:  Timer == CCR (75 == 75)! Hardware instantly forces the Pin LOW (0V).
+Tick 80:  Timer > CCR (80 > 75). Pin remains LOW.
+Tick 99:  Timer > CCR (99 > 75). Pin remains LOW.
+Tick 100: Timer == ARR (100 == 100)! Timer wraps back to 0. Pin goes HIGH.
+
+==================================================
+3. THE VOLTAGE GRAPH
+==================================================
+
+3.3V |-------75%-------|
+     |                 |
+     |                 |
+0.0V |                 |---25%---|
+     0                75        100 
+                Time (Microseconds)
+
+==================================================
+4. CHANGING BRIGHTNESS IN SOFTWARE
+==================================================
+To dim the LED to 10% brightness, the C++ software only needs to execute ONE line of code:
+  TIMER2->CCR = 10;
+The hardware instantly adapts on the very next cycle. The CPU does zero work to maintain the flashing.

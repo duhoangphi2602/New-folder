@@ -1,0 +1,34 @@
+/**
+ * @file profiles_sim.txt
+ * @brief Comparison of Compiler Commands for Debug vs Release.
+ */
+
+==================================================
+1. DEBUG PROFILE COMMAND
+==================================================
+arm-none-eabi-g++ -c main.cpp -o main.o -mcpu=cortex-m4 -Og -g3 -DDEBUG
+
+Key Features:
+-Og     : Optimize for debugging. Keeps execution flow linear.
+-g3     : Maximum debug symbols. Includes macros in debug data.
+-DDEBUG : Custom macro for the developer to use #ifdef DEBUG.
+
+Result: 
+- Easy to step through with a debugger.
+- Massive .elf file size.
+- Slow execution speed.
+
+==================================================
+2. RELEASE PROFILE COMMAND
+==================================================
+arm-none-eabi-g++ -c main.cpp -o main.o -mcpu=cortex-m4 -Os -DNDEBUG
+
+Key Features:
+-Os     : Optimize heavily for minimum binary size.
+[no -g] : No debug metadata generated.
+-DNDEBUG: Standard macro that entirely deletes all assert() statements.
+
+Result:
+- Impossible to step through cleanly with a debugger.
+- Tiny .elf file size.
+- Extremely fast execution speed.

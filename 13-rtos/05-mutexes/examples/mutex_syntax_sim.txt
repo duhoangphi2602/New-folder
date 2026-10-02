@@ -1,0 +1,51 @@
+/**
+ * @file mutex_syntax_sim.txt
+ * @brief Conceptual FreeRTOS code for protecting a UART console.
+ */
+
+#include "FreeRTOS.h"
+#include "semphr.h"
+
+// 1. Declare the Mutex globally
+SemaphoreHandle_t uart_mutex;
+
+void vTaskSensor(void *pvParameters) {
+    while(1) {
+        // 3. Request the key to the UART. 
+        // portMAX_DELAY tells the OS to put this task to sleep FOREVER 
+        // until the key becomes available.
+        if (xSemaphoreTake(uart_mutex, portMAX_DELAY) == pdTRUE) {
+            
+            // --- CRITICAL SECTION START ---
+            // Even if preempted here, no other task can print to UART!
+            printf("Sensor Data: 25.4 C\n");
+            // --- CRITICAL SECTION END ---
+            
+            // 4. Give the key back! (Crucial)
+            xSemaphoreGive(uart_mutex);
+        }
+        vTaskDelay(100);
+    }
+}
+
+void vTaskWiFi(void *pvParameters) {
+    while(1) {
+        // Attempt to take the mutex. 
+        xSemaphoreTake(uart_mutex, portMAX_DELAY);
+        
+        printf("WiFi Connected to AP\n");
+        
+        xSemaphoreGive(uart_mutex);
+        
+        vTaskDelay(500);
+    }
+}
+
+int main() {
+    // 2. Create the physical Mutex in RAM before starting tasks
+    uart_mutex = xSemaphoreCreateMutex();
+    
+    xTaskCreate(vTaskSensor, ...);
+    xTaskCreate(vTaskWiFi, ...);
+    vTaskStartScheduler();
+}

@@ -1,0 +1,43 @@
+/**
+ * @file preprocessor_sim.txt
+ * @brief Conceptual simulation of the C Preprocessor (Stage 1 of the toolchain).
+ */
+
+==================================================
+1. ORIGINAL HEADER: math_utils.h
+==================================================
+#ifndef MATH_UTILS_H
+#define MATH_UTILS_H
+
+int add(int a, int b);
+
+#endif
+
+==================================================
+2. ORIGINAL SOURCE: main.c
+==================================================
+#include "math_utils.h"
+
+#define PI 3
+#define SQUARE(x) (x * x)
+
+int main() {
+    int radius = 5;
+    int area = PI * SQUARE(radius);
+    return 0;
+}
+
+==================================================
+3. PREPROCESSOR OUTPUT: main.i (The Translation Unit)
+==================================================
+// Notice: The #include has been physically replaced by the contents of math_utils.h
+// The #ifndef passed successfully.
+int add(int a, int b);
+
+int main() {
+    int radius = 5;
+    // Notice: PI was replaced with 3. SQUARE(radius) was replaced with (radius * radius).
+    // The compiler will ONLY ever see the line below.
+    int area = 3 * (radius * radius); 
+    return 0;
+}

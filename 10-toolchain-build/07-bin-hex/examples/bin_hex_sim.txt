@@ -1,0 +1,45 @@
+/**
+ * @file bin_hex_sim.txt
+ * @brief Conceptual simulation comparing .bin and .hex formats.
+ */
+
+==================================================
+1. THE SCENARIO
+==================================================
+We have exactly 4 bytes of machine code: 0xDE 0xAD 0xBE 0xEF
+We need to flash it to memory address 0x08000000.
+
+==================================================
+2. THE .bin FILE (app.bin)
+==================================================
+File Size on Disk: Exactly 4 bytes.
+File Contents (Viewed in a Hex Editor):
+DE AD BE EF
+
+Notice: There is absolutely no indication inside this file that it belongs at 0x08000000. 
+The flashing tool command must supply the address:
+> st-flash write app.bin 0x08000000
+
+==================================================
+3. THE .hex FILE (app.hex)
+==================================================
+File Size on Disk: 45 bytes (Plain Text ASCII).
+File Contents (Opened in Notepad):
+
+:020000040800F2
+:04000000DEADBEEF68
+:00000001FF
+
+Notice how the data is structured:
+Line 1: Extended Linear Address Record (Sets the upper 16 bits of the address to 0x0800)
+Line 2: Data Record. 
+  - : (Start of record)
+  - 04 (Number of data bytes: 4)
+  - 0000 (Lower 16 bits of address)
+  - 00 (Record type: Data)
+  - DEADBEEF (The actual data)
+  - 68 (Checksum to verify integrity)
+Line 3: End of File Record.
+
+The flashing tool just needs the file:
+> st-flash write app.hex
